@@ -33,6 +33,8 @@ interface EmployeeViewProps {
   onEditUserAccount?: (updatedUser: UserAccount) => void;
   onDeleteUserAccount?: (userId: string) => void;
   isAdminView: boolean;
+  hrAdminPasscode?: string;
+  onUpdateHrAdminPasscode?: (newPasscode: string) => void;
 }
 
 export const EmployeeView: React.FC<EmployeeViewProps> = ({
@@ -43,7 +45,9 @@ export const EmployeeView: React.FC<EmployeeViewProps> = ({
   onDeleteEmployee,
   onEditUserAccount,
   onDeleteUserAccount,
-  isAdminView
+  isAdminView,
+  hrAdminPasscode = '1234',
+  onUpdateHrAdminPasscode
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'employees' | 'users'>('users');
   const [searchTerm, setSearchTerm] = useState('');
@@ -51,6 +55,11 @@ export const EmployeeView: React.FC<EmployeeViewProps> = ({
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [deletingEmployee, setDeletingEmployee] = useState<Employee | null>(null);
+  
+  // HR Admin Passcode Management State
+  const [passcodeInput, setPasscodeInput] = useState(hrAdminPasscode);
+  const [isEditingPasscode, setIsEditingPasscode] = useState(false);
+  const [passcodeSuccessMsg, setPasscodeSuccessMsg] = useState('');
   
   // User Account View state
   const [userSearchTerm, setUserSearchTerm] = useState('');
@@ -395,6 +404,82 @@ export const EmployeeView: React.FC<EmployeeViewProps> = ({
               </div>
               <div className="text-[10px] text-emerald-700 font-semibold">พร้อมใช้งานทันที</div>
             </div>
+          </div>
+
+          {/* HR Admin Passcode Setting Card */}
+          <div className="bg-amber-50/90 border border-amber-200/90 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-amber-500/20 text-amber-900 rounded-xl shrink-0">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                  ตั้งค่ารหัสอนุมัติสิทธิ์ผู้ดูแล HR (Admin Passcode)
+                  <span className="px-2 py-0.5 bg-amber-200/80 text-amber-900 font-mono font-extrabold rounded-md text-[11px]">
+                    {hrAdminPasscode}
+                  </span>
+                </h4>
+                <p className="text-[11px] text-amber-800/90 mt-0.5">
+                  ใช้สำหรับยืนยันสิทธิ์เมื่อผู้สมัครลงทะเบียนเข้าใช้งานในสิทธิ์ผู้ดูแลระบบ (HR Admin)
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+              {isEditingPasscode ? (
+                <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                  <input
+                    type="text"
+                    value={passcodeInput}
+                    onChange={(e) => setPasscodeInput(e.target.value.trim())}
+                    placeholder="กรอกรหัสใหม่"
+                    className="px-3 py-1.5 bg-white border border-amber-300 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-amber-500 w-32"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (passcodeInput.trim() && onUpdateHrAdminPasscode) {
+                        onUpdateHrAdminPasscode(passcodeInput.trim());
+                        setIsEditingPasscode(false);
+                        setPasscodeSuccessMsg('เปลี่ยนรหัสอนุมัติ HR เรียบร้อยแล้ว!');
+                        setTimeout(() => setPasscodeSuccessMsg(''), 3000);
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition shadow-2xs cursor-pointer"
+                  >
+                    บันทึก
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPasscodeInput(hrAdminPasscode);
+                      setIsEditingPasscode(false);
+                    }}
+                    className="px-2.5 py-1.5 bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 font-bold text-xs rounded-xl transition cursor-pointer"
+                  >
+                    ยกเลิก
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPasscodeInput(hrAdminPasscode);
+                    setIsEditingPasscode(true);
+                  }}
+                  className="px-3.5 py-1.5 bg-white hover:bg-amber-100/60 text-amber-900 border border-amber-300 rounded-xl font-bold text-xs transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                >
+                  <KeyRound className="w-3.5 h-3.5 text-amber-700" />
+                  <span>ตั้งรหัสอนุมัติ HR ใหม่</span>
+                </button>
+              )}
+            </div>
+
+            {passcodeSuccessMsg && (
+              <div className="w-full text-xs font-bold text-emerald-800 bg-emerald-100/90 border border-emerald-300 px-3 py-1.5 rounded-xl animate-in fade-in">
+                ✓ {passcodeSuccessMsg}
+              </div>
+            )}
           </div>
 
           {/* Filter Bar & Password Visibility Master Toggle */}

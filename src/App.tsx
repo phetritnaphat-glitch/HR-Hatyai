@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Employee,
   AttendanceRecord,
@@ -62,18 +62,91 @@ export default function App() {
     return INITIAL_EMPLOYEES;
   });
 
-  // Auth State
+  const TEN_MINUTES_SEC = 600; // 10 minutes (600 seconds) inactivity limit
+
+  // Auth State - Default: null (Sign In screen as initial page)
   const [currentUserAccount, setCurrentUserAccount] = useState<UserAccount | null>(() => {
-    const saved = localStorage.getItem('hr_cloud_auth_user');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return null;
+    const savedUser = localStorage.getItem('hr_cloud_auth_user');
+    const savedLastActivity = localStorage.getItem('hr_cloud_last_activity');
+
+    if (savedUser && savedLastActivity) {
+      const lastActivity = parseInt(savedLastActivity, 10);
+      const elapsedMs = Date.now() - lastActivity;
+      const TEN_MINUTES_MS = TEN_MINUTES_SEC * 1000;
+
+      if (elapsedMs < TEN_MINUTES_MS) {
+        try {
+          return JSON.parse(savedUser);
+        } catch (e) {
+          return null;
+        }
+      } else {
+        localStorage.removeItem('hr_cloud_auth_user');
+        localStorage.removeItem('hr_cloud_last_activity');
       }
     }
-    return MOCK_USERS[0]; // Default logged in as HR for initial view
+    return null; // Sign In / Login screen by default
   });
+
+  // Remaining Inactivity Time State (Seconds)
+  const [sessionSecondsLeft, setSessionSecondsLeft] = useState<number>(() => {
+    const savedLastActivity = localStorage.getItem('hr_cloud_last_activity');
+    if (savedLastActivity) {
+      const elapsedSec = Math.floor((Date.now() - parseInt(savedLastActivity, 10)) / 1000);
+      return Math.max(0, TEN_MINUTES_SEC - elapsedSec);
+    }
+    return TEN_MINUTES_SEC;
+  });
+
+  // Ref to track last user interaction time without causing constant re-renders
+  const lastActivityRef = React.useRef<number>(() => {
+    const saved = localStorage.getItem('hr_cloud_last_activity');
+    return saved ? parseInt(saved, 10) : Date.now();
+  });
+
+  // Track User Activity (Mouse, Keyboard, Touch, Scroll) to reset inactivity timer
+  useEffect(() => {
+    if (!currentUserAccount) return;
+
+    // Initialize activity timestamp on login/mount
+    const now = Date.now();
+    lastActivityRef.current = now;
+    localStorage.setItem('hr_cloud_last_activity', now.toString());
+
+    let lastUpdateMs = now;
+
+    const handleUserActivity = () => {
+      const currentMs = Date.now();
+      // Throttle activity updates to once per second
+      if (currentMs - lastUpdateMs > 1000) {
+        lastUpdateMs = currentMs;
+        lastActivityRef.current = currentMs;
+        localStorage.setItem('hr_cloud_last_activity', currentMs.toString());
+        setSessionSecondsLeft(TEN_MINUTES_SEC);
+      }
+    };
+
+    const activityEvents = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'];
+    activityEvents.forEach((evt) => window.addEventListener(evt, handleUserActivity, { passive: true }));
+
+    // Timer interval to check inactivity countdown every second
+    const interval = setInterval(() => {
+      const elapsedSec = Math.floor((Date.now() - lastActivityRef.current) / 1000);
+      const remainingSec = TEN_MINUTES_SEC - elapsedSec;
+
+      if (remainingSec <= 0) {
+        setSessionSecondsLeft(0);
+        handleLogout();
+      } else {
+        setSessionSecondsLeft(remainingSec);
+      }
+    }, 1000);
+
+    return () => {
+      activityEvents.forEach((evt) => window.removeEventListener(evt, handleUserActivity));
+      clearInterval(interval);
+    };
+  }, [currentUserAccount]);
   
   const [currentEmployee, setCurrentEmployee] = useState<Employee>(() => {
     if (currentUserAccount) {
@@ -120,8 +193,11 @@ export default function App() {
 
   // Auth Handlers
   const handleLoginSuccess = (userAccount: UserAccount) => {
+    const now = Date.now();
     setCurrentUserAccount(userAccount);
+    setSessionSecondsLeft(TEN_MINUTES_SEC);
     localStorage.setItem('hr_cloud_auth_user', JSON.stringify(userAccount));
+    localStorage.setItem('hr_cloud_last_activity', now.toString());
     
     const emp = employees.find((e) => e.id === userAccount.employeeId) || employees[0];
     setCurrentEmployee(emp);
@@ -132,6 +208,8 @@ export default function App() {
   const handleLogout = () => {
     setCurrentUserAccount(null);
     localStorage.removeItem('hr_cloud_auth_user');
+    localStorage.removeItem('hr_cloud_last_activity');
+    localStorage.removeItem('hr_cloud_login_time');
   };
 
   if (!currentUserAccount) {
@@ -338,6 +416,7 @@ export default function App() {
         currentUserAccount={currentUserAccount}
         onLogout={handleLogout}
         onSyncData={handleSyncData}
+        sessionSecondsLeft={sessionSecondsLeft}
       />
 
       {/* Main Body */}

@@ -15,6 +15,7 @@ interface HeaderProps {
   currentUserAccount?: UserAccount | null;
   onLogout?: () => void;
   onSyncData?: () => void;
+  sessionSecondsLeft?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -29,7 +30,8 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleMobileMenu,
   currentUserAccount,
   onLogout,
-  onSyncData
+  onSyncData,
+  sessionSecondsLeft
 }) => {
 
   const [currentTime, setCurrentTime] = useState<string>('');
@@ -62,6 +64,13 @@ export const Header: React.FC<HeaderProps> = ({
         setSyncToast(null);
       }, 4000);
     }, 1100);
+  };
+
+  const formatSessionTime = (seconds?: number) => {
+    if (seconds === undefined) return '';
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
   useEffect(() => {
@@ -123,6 +132,23 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="text-slate-300">|</span>
           <span className="font-mono font-bold text-slate-900 text-xs sm:text-sm whitespace-nowrap">{currentTime} น.</span>
         </div>
+
+        {/* 10-Minute Session Inactivity Timer Badge */}
+        {sessionSecondsLeft !== undefined && (
+          <div
+            className={`hidden lg:flex items-center gap-1.5 px-3 h-10 rounded-xl border text-xs font-mono font-bold shadow-2xs transition whitespace-nowrap shrink-0 ${
+              sessionSecondsLeft <= 120
+                ? 'bg-rose-50 text-rose-700 border-rose-300 animate-pulse'
+                : 'bg-amber-50/90 text-amber-900 border-amber-200/90'
+            }`}
+            title="ระบบจะออกจากระบบอัตโนมัติเมื่อไม่ใช้งานครบ 10 นาที (เวลานับถอยหลังจะรีเซ็ตเมื่อมีการเคลื่อนไหวใช้งานหน้าจอ)"
+          >
+            <Clock className={`w-3.5 h-3.5 shrink-0 ${sessionSecondsLeft <= 120 ? 'text-rose-600' : 'text-amber-600'}`} />
+            <span className="whitespace-nowrap">
+              หมดเวลาใน <strong className="font-extrabold text-amber-950 font-mono">{formatSessionTime(sessionSecondsLeft)}</strong> นาที
+            </span>
+          </div>
+        )}
 
         {/* Right: Role Switcher & Employee Profile Switcher */}
         <div className="flex items-center gap-2 sm:gap-2.5">
@@ -325,35 +351,6 @@ export const Header: React.FC<HeaderProps> = ({
                     </span>
                   </div>
                 </div>
-
-                {/* Account Switcher for HR simulation if allowed */}
-                {currentUserAccount?.role === 'hr' && (
-                  <div className="p-2 border-b border-slate-100">
-                    <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                      จำลองดูมุมมองพนักงานท่านอื่น
-                    </div>
-                    <div className="max-h-40 overflow-y-auto space-y-0.5">
-                      {allEmployees.map((emp) => (
-                        <button
-                          key={emp.id}
-                          onClick={() => {
-                            onSelectEmployee(emp);
-                            setDropdownOpen(false);
-                          }}
-                          className={`w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-slate-100 flex items-center gap-2 transition text-xs ${
-                            emp.id === currentEmployee.id ? 'bg-emerald-50 font-bold text-emerald-800' : 'text-slate-700'
-                          }`}
-                        >
-                          <img src={emp.avatar} alt={emp.name} className="w-6 h-6 rounded-md object-cover" />
-                          <div className="truncate">
-                            <div className="font-medium text-slate-900 leading-none">{emp.name}</div>
-                            <div className="text-[10px] text-slate-500 mt-0.5">{emp.department}</div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {/* Logout Action */}
                 <div className="px-2 pt-1">

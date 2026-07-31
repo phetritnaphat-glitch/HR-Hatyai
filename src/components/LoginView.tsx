@@ -23,12 +23,14 @@ interface LoginViewProps {
   onLoginSuccess: (user: UserAccount) => void;
   userAccounts: UserAccount[];
   onRegisterUser: (newUser: UserAccount, newEmployee: Employee) => void;
+  hrAdminPasscode?: string;
 }
 
 export const LoginView: React.FC<LoginViewProps> = ({
   onLoginSuccess,
   userAccounts,
-  onRegisterUser
+  onRegisterUser,
+  hrAdminPasscode = '1234'
 }) => {
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
 
@@ -96,8 +98,8 @@ export const LoginView: React.FC<LoginViewProps> = ({
       return;
     }
 
-    if (regRole === 'hr' && regHrPasscode.trim() !== '1234') {
-      setErrorMsg('รหัสอนุมัติสิทธิ์ HR ไม่ถูกต้อง (สำหรับพนักงานทั่วไป กรุณาเลือกสิทธิ์พนักงาน)');
+    if (regRole === 'hr' && regHrPasscode.trim() !== hrAdminPasscode) {
+      setErrorMsg(`รหัสอนุมัติสิทธิ์ HR ไม่ถูกต้อง (รหัสอนุมัติปัจจุบันคือ ${hrAdminPasscode})`);
       return;
     }
 
@@ -294,49 +296,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
                 <p className="text-slate-500 text-xs mt-0.5">กรอกชื่อผู้ใช้และรหัสผ่านเพื่อเข้าสู่ระบบ</p>
               </div>
 
-              {/* Quick Demo Login Cards & All Registered User Accounts */}
-              <div className="mb-5 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
-                    <KeyRound className="w-3.5 h-3.5 text-emerald-600" />
-                    รายชื่อผู้ใช้/ผู้สมัครทั้งหมดในระบบ ({userAccounts.length} บัญชี)
-                  </span>
-                  <span className="text-[10px] text-emerald-600 font-medium">คลิกเลือกเพื่อเข้าสู่ระบบ</span>
-                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
-                  {userAccounts.map((u) => {
-                    const isHr = u.role === 'hr';
-                    return (
-                      <button
-                        key={u.id || u.username}
-                        type="button"
-                        onClick={() => handleQuickLogin(u)}
-                        className={`p-2.5 rounded-xl text-left transition flex items-center justify-between group shadow-2xs cursor-pointer ${
-                          isHr
-                            ? 'bg-slate-900 hover:bg-slate-800 text-white'
-                            : 'bg-white hover:bg-emerald-50 border border-slate-200 text-slate-900'
-                        }`}
-                      >
-                        <div className="truncate pr-1">
-                          <div className="flex items-center gap-1.5 font-bold text-xs">
-                            {isHr ? (
-                              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                            ) : (
-                              <UserCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                            )}
-                            <span className="truncate">{u.displayName}</span>
-                          </div>
-                          <div className={`text-[10px] mt-0.5 font-mono ${isHr ? 'text-slate-300' : 'text-slate-500'}`}>
-                            User: <strong className={isHr ? 'text-emerald-300' : 'text-emerald-700'}>{u.username}</strong> | Pass: {u.passwordHash}
-                          </div>
-                        </div>
-                        <ArrowRight className={`w-3.5 h-3.5 shrink-0 group-hover:translate-x-0.5 transition ${isHr ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
 
               {/* Login Form */}
               <form onSubmit={handleLoginSubmit} className="space-y-3.5">
@@ -539,13 +499,13 @@ export const LoginView: React.FC<LoginViewProps> = ({
                       </label>
                       <input
                         type="password"
-                        placeholder="กรอกรหัส 1234 เพื่อยืนยันสิทธิ์ HR"
+                        placeholder={`กรอกรหัสอนุมัติ (${hrAdminPasscode}) เพื่อยืนยันสิทธิ์ HR`}
                         value={regHrPasscode}
                         onChange={(e) => setRegHrPasscode(e.target.value)}
-                        className="w-full px-3 py-1.5 bg-white border border-amber-300 rounded-lg text-xs text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-amber-500"
+                        className="w-full px-3 py-1.5 bg-white border border-amber-300 rounded-lg text-xs text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-amber-500 font-mono"
                       />
-                      <p className="text-[10px] text-amber-700">
-                        * ป้องกันพนักงานทั่วไปแอบอ้างสิทธิ์ (รหัสทดสอบสำหรับ HR คือ 1234)
+                      <p className="text-[10px] text-amber-800 font-medium">
+                        * ป้องกันพนักงานทั่วไปแอบอ้างสิทธิ์ (รหัสอนุมัติปัจจุบันสำหรับ HR คือ <strong className="font-mono underline">{hrAdminPasscode}</strong>)
                       </p>
                     </div>
                   )}
