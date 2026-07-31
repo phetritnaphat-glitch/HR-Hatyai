@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@layer utilities {
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+    #printable-payslip, #printable-payslip * {
+      visibility: visible;
+    }
+    #printable-payslip {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      box-shadow: none !important;
+      border: none !important;
+    }
+  }
+}
+

@@ -1,0 +1,11 @@
+{
+  "name": "Remix Remix HR Online - ระบบบริหารงานบุคคล-สำรอง",
+  "description": "ระบบบริหารงานบุคคลออนไลน์ บันทึกเวลาด้วย GPS/สแกนหน้า คำนวณเงินเดือน ประกันสังคม ภาษี ออกสลิปเงินเดือน จัดการวันลา จัดกะการทำงาน และส่งออกรายงาน Excel",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
