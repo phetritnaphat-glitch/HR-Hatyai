@@ -31,6 +31,7 @@ import {
   CheckSquare,
   Briefcase,
   ChevronDown,
+  ChevronUp,
   SlidersHorizontal,
   Maximize2,
   ExternalLink,
@@ -74,6 +75,7 @@ export const CheckInView: React.FC<CheckInViewProps> = ({
   // Search & Filter state for Attendance Log Table
   const [searchTerm, setSearchTerm] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('ALL');
+  const [isHistoryTableCollapsed, setIsHistoryTableCollapsed] = useState(true);
 
   // --- HR & Admin Workplace Locations State ---
   const [locations, setLocations] = useState<WorkplaceLocation[]>([
@@ -177,6 +179,22 @@ export const CheckInView: React.FC<CheckInViewProps> = ({
     (a) => a.employeeId === currentEmployee.id && a.date === todayStr
   );
 
+  // Helper to calculate OT hours when checkout occurs after settings.workEndTime
+  const calculateOtHours = (checkOutTimeStr: string) => {
+    if (!checkOutTimeStr || !settings.workEndTime) return 0;
+    const [outH, outM] = checkOutTimeStr.split(':').map(Number);
+    const [endH, endM] = settings.workEndTime.split(':').map(Number);
+    if (isNaN(outH) || isNaN(outM) || isNaN(endH) || isNaN(endM)) return 0;
+    
+    const outMins = outH * 60 + outM;
+    const endMins = endH * 60 + endM;
+    if (outMins > endMins) {
+      const diffMins = outMins - endMins;
+      return Math.round((diffMins / 60) * 10) / 10;
+    }
+    return 0;
+  };
+
   // GPS Check-In / Check-Out
   const handleSimulateGPSCheckIn = (type: 'checkIn' | 'checkOut') => {
     const now = new Date();
@@ -188,6 +206,16 @@ export const CheckInView: React.FC<CheckInViewProps> = ({
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
     const isLate = type === 'checkIn' && currentMinutes > deadlineMinutes;
     const calcLateMin = isLate ? currentMinutes - (startH * 60 + startM) : 0;
+
+    // Calculate OT automatically if checking out after workEndTime
+    let computedOt = todayRecord?.otHours || 0;
+    let otMsgPart = '';
+    if (type === 'checkOut') {
+      computedOt = calculateOtHours(timeStr);
+      if (computedOt > 0) {
+        otMsgPart = ` (เกินเวลาเลิกงาน ${settings.workEndTime} น. คิดเป็น OT = ${computedOt} ชม.)`;
+      }
+    }
 
     const locText =
       workSite === 'office'
@@ -202,22 +230,22 @@ export const CheckInView: React.FC<CheckInViewProps> = ({
       employeeName: currentEmployee.name,
       department: currentEmployee.department,
       date: todayStr,
-      checkInTime: type === 'checkIn' ? timeStr : (todayRecord?.checkInTime || '08:25'),
+      checkInTime: type === 'checkIn' ? timeStr : (todayRecord?.checkInTime || settings.workStartTime),
       checkOutTime: type === 'checkOut' ? timeStr : (todayRecord?.checkOutTime || null),
       status: isLate ? 'late' : (todayRecord?.status || 'present'),
       checkInMethod: 'GPS',
       locationName: locText,
       coords: activeLocation.coords,
-      otHours: type === 'checkOut' ? 1.5 : (todayRecord?.otHours || 0),
+      otHours: computedOt,
       lateMinutes: calcLateMin || (todayRecord?.lateMinutes || 0),
-      note: note || (type === 'checkIn' ? `ลงเวลาเข้างาน ณ ${locText}` : `ลงเวลาออกงาน ณ ${locText}`)
+      note: note || (type === 'checkIn' ? `ลงเวลาเข้างาน ณ ${locText}` : `ลงเวลาออกงาน ณ ${locText}${computedOt > 0 ? ` (OT ${computedOt} ชม.)` : ''}`)
     };
 
     onAddAttendance(newRecord);
     setActionSuccessMsg(
       type === 'checkIn'
         ? `บันทึกเวลาเข้างานสำเร็จเวลา ${timeStr} น. ณ ${locText}`
-        : `บันทึกเวลาออกงานสำเร็จเวลา ${timeStr} น. ณ ${locText}`
+        : `บันทึกเวลาออกงานสำเร็จเวลา ${timeStr} น. ณ ${locText}${otMsgPart}`
     );
     setTimeout(() => setActionSuccessMsg(null), 4000);
   };
@@ -230,27 +258,36 @@ export const CheckInView: React.FC<CheckInViewProps> = ({
       const now = new Date();
       const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
 
+      let computedOt = todayRecord?.otHours || 0;
+      let otMsgPart = '';
+      if (type === 'checkOut') {
+        computedOt = calculateOtHours(timeStr);
+        if (computedOt > 0) {
+          otMsgPart = ` (เกินเวลาเลิกงาน ${settings.workEndTime} น. คิดเป็น OT = ${computedOt} ชม.)`;
+        }
+      }
+
       const newRecord: AttendanceRecord = {
         id: todayRecord?.id || `ATT-${Date.now()}`,
         employeeId: currentEmployee.id,
         employeeName: currentEmployee.name,
         department: currentEmployee.department,
         date: todayStr,
-        checkInTime: type === 'checkIn' ? timeStr : (todayRecord?.checkInTime || '08:25'),
+        checkInTime: type === 'checkIn' ? timeStr : (todayRecord?.checkInTime || settings.workStartTime),
         checkOutTime: type === 'checkOut' ? timeStr : (todayRecord?.checkOutTime || null),
         status: todayRecord?.status || 'present',
         checkInMethod: 'FaceScan',
         locationName: `ประตูสแกนหน้า ${activeLocation.name}`,
-        otHours: type === 'checkOut' ? 1.5 : (todayRecord?.otHours || 0),
+        otHours: computedOt,
         lateMinutes: 0,
-        note: type === 'checkIn' ? 'สแกนใบหน้าเข้างานสำเร็จ' : 'สแกนใบหน้าออกงานสำเร็จ'
+        note: type === 'checkIn' ? 'สแกนใบหน้าเข้างานสำเร็จ' : `สแกนใบหน้าออกงานสำเร็จ${computedOt > 0 ? ` (OT ${computedOt} ชม.)` : ''}`
       };
 
       onAddAttendance(newRecord);
       setActionSuccessMsg(
         type === 'checkIn'
           ? `สแกนใบหน้าเข้างานสำเร็จเวลา ${timeStr} น.`
-          : `สแกนใบหน้าออกงานสำเร็จเวลา ${timeStr} น.`
+          : `สแกนใบหน้าออกงานสำเร็จเวลา ${timeStr} น.${otMsgPart}`
       );
       setTimeout(() => setActionSuccessMsg(null), 4000);
     }, 1500);
@@ -910,6 +947,63 @@ export const CheckInView: React.FC<CheckInViewProps> = ({
                         </div>
                       </div>
 
+                      {/* Work Hours Config Quick Widget */}
+                      <div className="bg-slate-800/90 rounded-xl p-2.5 border border-slate-700/80 space-y-2">
+                        <div className="flex flex-wrap items-center justify-between gap-1.5 text-xs">
+                          <span className="text-[11px] font-bold text-slate-200 flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                            กำหนดเวลาเข้า-เลิกงาน:
+                            {isAdminView ? (
+                              <span className="text-[9px] bg-emerald-900/80 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-700/50 font-medium">
+                                HR / Admin
+                              </span>
+                            ) : (
+                              <span className="text-[9px] bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded border border-slate-600 font-medium">
+                                เฉพาะ HR/Admin แก้ไขได้
+                              </span>
+                            )}
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded-lg border border-slate-700">
+                              <span className="text-[10px] text-slate-400 font-semibold">เริ่ม:</span>
+                              {isAdminView ? (
+                                <input
+                                  type="time"
+                                  value={settings.workStartTime}
+                                  onChange={(e) => setSettings({ ...settings, workStartTime: e.target.value })}
+                                  className="bg-transparent text-emerald-400 font-mono font-bold text-xs focus:outline-none cursor-pointer"
+                                  title="ตั้งเวลาเริ่มงานปกติ (สำหรับ HR/Admin)"
+                                />
+                              ) : (
+                                <span className="text-emerald-400 font-mono font-bold text-xs px-1" title="เฉพาะ HR/Admin เท่านั้นที่สามารถแก้ไขเวลาได้">
+                                  {settings.workStartTime} น.
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-slate-500 font-bold text-xs">-</span>
+                            <div className="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded-lg border border-slate-700">
+                              <span className="text-[10px] text-slate-400 font-semibold">เลิก:</span>
+                              {isAdminView ? (
+                                <input
+                                  type="time"
+                                  value={settings.workEndTime}
+                                  onChange={(e) => setSettings({ ...settings, workEndTime: e.target.value })}
+                                  className="bg-transparent text-amber-400 font-mono font-bold text-xs focus:outline-none cursor-pointer"
+                                  title="ตั้งเวลาเลิกงานปกติ (สำหรับ HR/Admin)"
+                                />
+                              ) : (
+                                <span className="text-amber-400 font-mono font-bold text-xs px-1" title="เฉพาะ HR/Admin เท่านั้นที่สามารถแก้ไขเวลาได้">
+                                  {settings.workEndTime} น.
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-[10px] text-amber-300/90 font-medium flex items-center justify-between pt-1.5 border-t border-slate-700/50">
+                          <span>⚡ เลิกงานหลัง {settings.workEndTime} น. ระบบจะคำนวณเป็น OT ให้อัตโนมัติ</span>
+                        </div>
+                      </div>
+
                       {/* Live Verification & Time Status Grid */}
                       <div className="grid grid-cols-2 gap-2 p-2.5 sm:p-3 bg-slate-800/80 rounded-xl border border-slate-700/60 text-xs">
                         <div className="p-2 sm:p-2.5 bg-slate-900/80 rounded-lg border border-slate-700/50 min-w-0">
@@ -1033,7 +1127,26 @@ export const CheckInView: React.FC<CheckInViewProps> = ({
             </div>
 
           <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-            <div className="relative flex-1 sm:w-60">
+            <button
+              type="button"
+              onClick={() => setIsHistoryTableCollapsed(!isHistoryTableCollapsed)}
+              className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0"
+              title={isHistoryTableCollapsed ? 'โชว์การแสดงผลตาราง' : 'ย่อการแสดงผลตาราง'}
+            >
+              {isHistoryTableCollapsed ? (
+                <>
+                  <ChevronDown className="w-4 h-4 text-emerald-600" />
+                  <span>โชว์ตาราง</span>
+                </>
+              ) : (
+                <>
+                  <ChevronUp className="w-4 h-4 text-slate-600" />
+                  <span>ย่อตาราง</span>
+                </>
+              )}
+            </button>
+
+            <div className="relative flex-1 sm:w-56">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
               <input
                 type="text"
@@ -1061,19 +1174,35 @@ export const CheckInView: React.FC<CheckInViewProps> = ({
         </div>
 
         {/* Attendance Records Table */}
+        {isHistoryTableCollapsed ? (
+          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between gap-3 text-xs font-semibold text-slate-700">
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-slate-400"></span>
+              ย่อการแสดงผลตารางประวัติการลงเวลาไว้ ({filteredRecords.length} รายการ)
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsHistoryTableCollapsed(false)}
+              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0"
+            >
+              <span>โชว์ตารางประวัติลงเวลา</span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : (
         <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-2xs">
-          <table className="w-full text-left border-collapse text-xs whitespace-nowrap">
+          <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
-                <th className="py-2.5 px-3 pl-4 whitespace-nowrap">พนักงาน</th>
-                <th className="py-2.5 px-3 whitespace-nowrap">แผนก</th>
-                <th className="py-2.5 px-3 whitespace-nowrap">วันที่</th>
-                <th className="py-2.5 px-3 text-emerald-800 bg-emerald-50/80 whitespace-nowrap">เข้างาน</th>
-                <th className="py-2.5 px-3 text-rose-800 bg-rose-50/80 whitespace-nowrap">ออกงาน</th>
-                <th className="py-2.5 px-3 whitespace-nowrap">สาย / OT</th>
-                <th className="py-2.5 px-3 whitespace-nowrap">วิธีลงเวลา & สถานที่</th>
-                <th className="py-2.5 px-3 text-center whitespace-nowrap">สถานะ</th>
-                {isAdminView && <th className="py-2.5 px-3 pr-4 text-center whitespace-nowrap bg-emerald-50/30">จัดการ (HR)</th>}
+                <th className="py-2.5 px-2.5 pl-3 whitespace-nowrap">พนักงาน</th>
+                <th className="py-2.5 px-2.5 whitespace-nowrap">แผนก</th>
+                <th className="py-2.5 px-2.5 whitespace-nowrap">วันที่</th>
+                <th className="py-2.5 px-2.5 text-emerald-800 bg-emerald-50/80 whitespace-nowrap">เข้างาน</th>
+                <th className="py-2.5 px-2.5 text-rose-800 bg-rose-50/80 whitespace-nowrap">ออกงาน</th>
+                <th className="py-2.5 px-2.5 whitespace-nowrap">สาย / OT</th>
+                <th className="py-2.5 px-2.5 whitespace-nowrap">วิธีลงเวลา & สถานที่</th>
+                <th className="py-2.5 px-2.5 text-center whitespace-nowrap">สถานะ</th>
+                {isAdminView && <th className="py-2.5 px-2.5 pr-3 text-center whitespace-nowrap bg-emerald-50/30">จัดการ (HR)</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700 bg-white">
@@ -1087,21 +1216,21 @@ export const CheckInView: React.FC<CheckInViewProps> = ({
                 filteredRecords.map((rec) => {
                   return (
                     <tr key={rec.id} className="hover:bg-slate-50/80 transition">
-                      <td className="py-2.5 px-3 pl-4 font-bold text-slate-900">
+                      <td className="py-2.5 px-2.5 pl-3 font-bold text-slate-900 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
-                          <span className="font-mono text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-md border border-slate-200">
+                          <span className="font-mono text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-md border border-slate-200 shrink-0">
                             {rec.employeeId}
                           </span>
-                          <span className="truncate max-w-[130px] sm:max-w-[160px]" title={rec.employeeName}>{rec.employeeName}</span>
+                          <span className="truncate max-w-[120px] sm:max-w-[150px]" title={rec.employeeName}>{rec.employeeName}</span>
                         </div>
                       </td>
-                      <td className="py-2.5 px-3 text-slate-600 text-[11px] truncate max-w-[120px]" title={rec.department}>
-                        {rec.department}
+                      <td className="py-2.5 px-2.5 text-slate-600 text-[11px] whitespace-nowrap">
+                        <span className="truncate max-w-[110px] block" title={rec.department}>{rec.department}</span>
                       </td>
-                      <td className="py-2.5 px-3 font-mono text-slate-800 text-[11px]">{rec.date}</td>
+                      <td className="py-2.5 px-2.5 font-mono text-slate-800 text-[11px] whitespace-nowrap">{rec.date}</td>
                       
                       {/* Check In Time Column */}
-                      <td className="py-2.5 px-3 bg-emerald-50/20 font-mono font-bold">
+                      <td className="py-2.5 px-2.5 bg-emerald-50/20 font-mono font-bold whitespace-nowrap">
                         {rec.checkInTime ? (
                           <span className="inline-flex items-center gap-1 text-emerald-800 bg-emerald-100/90 px-2 py-0.5 rounded-md border border-emerald-200/80 text-[11px]">
                             <LogIn className="w-3 h-3 text-emerald-600 shrink-0" />
@@ -1113,7 +1242,7 @@ export const CheckInView: React.FC<CheckInViewProps> = ({
                       </td>
 
                       {/* Check Out Time Column */}
-                      <td className="py-2.5 px-3 bg-rose-50/20 font-mono font-bold">
+                      <td className="py-2.5 px-2.5 bg-rose-50/20 font-mono font-bold whitespace-nowrap">
                         {rec.checkOutTime ? (
                           <span className="inline-flex items-center gap-1 text-rose-800 bg-rose-100/90 px-2 py-0.5 rounded-md border border-rose-200/80 text-[11px]">
                             <LogOut className="w-3 h-3 text-rose-600 shrink-0" />
@@ -1126,7 +1255,7 @@ export const CheckInView: React.FC<CheckInViewProps> = ({
                         )}
                       </td>
 
-                      <td className="py-2.5 px-3 text-[11px]">
+                      <td className="py-2.5 px-2.5 text-[11px] whitespace-nowrap">
                         {rec.lateMinutes > 0 ? (
                           <span className="text-amber-700 font-bold block">
                             สาย {rec.lateMinutes} นาที
@@ -1142,18 +1271,18 @@ export const CheckInView: React.FC<CheckInViewProps> = ({
                         )}
                       </td>
 
-                      <td className="py-2.5 px-3">
+                      <td className="py-2.5 px-2.5 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
-                          <span className="px-1.5 py-0.5 bg-slate-100 border border-slate-200 text-slate-700 rounded text-[10px] font-mono font-semibold">
+                          <span className="px-1.5 py-0.5 bg-slate-100 border border-slate-200 text-slate-700 rounded text-[10px] font-mono font-semibold shrink-0">
                             {rec.checkInMethod}
                           </span>
-                          <span className="text-[11px] text-slate-500 truncate max-w-[130px]" title={rec.locationName}>
+                          <span className="text-[11px] text-slate-500 truncate max-w-[110px] sm:max-w-[140px] block" title={rec.locationName}>
                             {rec.locationName || 'สำนักงาน'}
                           </span>
                         </div>
                       </td>
 
-                      <td className="py-2.5 px-3 text-center">
+                      <td className="py-2.5 px-2.5 text-center whitespace-nowrap">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
                           rec.status === 'present'
                             ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
@@ -1175,7 +1304,7 @@ export const CheckInView: React.FC<CheckInViewProps> = ({
 
                       {/* HR Edit / Delete Actions */}
                       {isAdminView && (
-                        <td className="py-2.5 px-3 pr-4 text-center bg-emerald-50/20">
+                        <td className="py-2.5 px-2.5 pr-3 text-center bg-emerald-50/20 whitespace-nowrap">
                           <div className="flex items-center justify-center gap-1">
                             <button
                               type="button"
@@ -1203,6 +1332,7 @@ export const CheckInView: React.FC<CheckInViewProps> = ({
             </tbody>
           </table>
         </div>
+        )}
       </div>
       )}
 
@@ -1709,7 +1839,12 @@ export const CheckInView: React.FC<CheckInViewProps> = ({
                   <input
                     type="time"
                     value={formCheckOut}
-                    onChange={(e) => setFormCheckOut(e.target.value)}
+                    onChange={(e) => {
+                      const newOut = e.target.value;
+                      setFormCheckOut(newOut);
+                      const calcOt = calculateOtHours(newOut);
+                      setFormOtHours(calcOt);
+                    }}
                     className="w-full p-2.5 border border-slate-200 rounded-xl font-mono text-rose-800 font-bold"
                   />
                 </div>

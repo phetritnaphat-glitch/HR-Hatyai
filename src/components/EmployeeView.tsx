@@ -21,7 +21,9 @@ import {
   Eye,
   EyeOff,
   Copy,
-  Check
+  Check,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 interface EmployeeViewProps {
@@ -60,11 +62,14 @@ export const EmployeeView: React.FC<EmployeeViewProps> = ({
   const [passcodeInput, setPasscodeInput] = useState(hrAdminPasscode);
   const [isEditingPasscode, setIsEditingPasscode] = useState(false);
   const [passcodeSuccessMsg, setPasscodeSuccessMsg] = useState('');
+  const [isPasscodeCollapsed, setIsPasscodeCollapsed] = useState(true);
   
   // User Account View state
   const [userSearchTerm, setUserSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<'ALL' | 'hr' | 'employee'>('ALL');
   const [showAllPasswords, setShowAllPasswords] = useState(true);
+  const [isUserTableCollapsed, setIsUserTableCollapsed] = useState(true);
+  const [isEmpGridCollapsed, setIsEmpGridCollapsed] = useState(true);
   const [visiblePasswords, setVisiblePasswords] = useState<{ [key: string]: boolean }>({});
   const [copiedText, setCopiedText] = useState<string | null>(null);
   const [editingUserAccount, setEditingUserAccount] = useState<UserAccount | null>(null);
@@ -253,6 +258,25 @@ export const EmployeeView: React.FC<EmployeeViewProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsEmpGridCollapsed(!isEmpGridCollapsed)}
+                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0"
+                title={isEmpGridCollapsed ? 'โชว์การแสดงผลรายชื่อ' : 'ย่อการแสดงผลรายชื่อ'}
+              >
+                {isEmpGridCollapsed ? (
+                  <>
+                    <ChevronDown className="w-4 h-4 text-emerald-600" />
+                    <span>โชว์การแสดงผล</span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronUp className="w-4 h-4 text-slate-600" />
+                    <span>ย่อการแสดงผล</span>
+                  </>
+                )}
+              </button>
+
               <Filter className="w-4 h-4 text-slate-400" />
               <select
                 value={deptFilter}
@@ -270,7 +294,23 @@ export const EmployeeView: React.FC<EmployeeViewProps> = ({
           </div>
 
           {/* Directory Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+          {isEmpGridCollapsed ? (
+            <div className="p-4 bg-slate-50 text-slate-600 rounded-2xl border border-slate-200/80 text-center text-xs font-semibold flex items-center justify-between gap-3">
+              <span className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-slate-400"></span>
+                ย่อการแสดงผลรายชื่อพนักงานไว้ ({filteredEmployees.length} คน)
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsEmpGridCollapsed(false)}
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0"
+              >
+                <span>โชว์รายชื่อพนักงาน</span>
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
             {filteredEmployees.map((emp) => (
               <div key={emp.id} className="bg-slate-50/70 rounded-2xl border border-slate-200 p-5 space-y-3 relative hover:shadow-md transition flex flex-col justify-between">
                 
@@ -359,6 +399,7 @@ export const EmployeeView: React.FC<EmployeeViewProps> = ({
               </div>
             ))}
           </div>
+          )}
         </div>
       ) : (
         /* TAB 2: REGISTERED USER ACCOUNTS & APPLICANTS */
@@ -406,78 +447,122 @@ export const EmployeeView: React.FC<EmployeeViewProps> = ({
             </div>
           </div>
 
-          {/* HR Admin Passcode Setting Card */}
-          <div className="bg-amber-50/90 border border-amber-200/90 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-amber-500/20 text-amber-900 rounded-xl shrink-0">
-                <ShieldCheck className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
-                  ตั้งค่ารหัสอนุมัติสิทธิ์ผู้ดูแล HR (Admin Passcode)
-                  <span className="px-2 py-0.5 bg-amber-200/80 text-amber-900 font-mono font-extrabold rounded-md text-[11px]">
-                    {hrAdminPasscode}
+          {/* HR Admin Passcode Setting Card (Collapsible & Expandable) */}
+          <div className="bg-amber-50/90 border border-amber-200/90 rounded-2xl p-3.5 shadow-xs transition-all">
+            {isPasscodeCollapsed ? (
+              /* Collapsed view */
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 bg-amber-500/20 text-amber-900 rounded-lg shrink-0">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                    รหัสอนุมัติ HR Admin:
+                    <span className="px-2 py-0.5 bg-amber-200/90 text-amber-900 font-mono font-extrabold rounded-md text-[11px]">
+                      {hrAdminPasscode}
+                    </span>
                   </span>
-                </h4>
-                <p className="text-[11px] text-amber-800/90 mt-0.5">
-                  ใช้สำหรับยืนยันสิทธิ์เมื่อผู้สมัครลงทะเบียนเข้าใช้งานในสิทธิ์ผู้ดูแลระบบ (HR Admin)
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
-              {isEditingPasscode ? (
-                <div className="flex items-center gap-1.5 w-full sm:w-auto">
-                  <input
-                    type="text"
-                    value={passcodeInput}
-                    onChange={(e) => setPasscodeInput(e.target.value.trim())}
-                    placeholder="กรอกรหัสใหม่"
-                    className="px-3 py-1.5 bg-white border border-amber-300 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-amber-500 w-32"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (passcodeInput.trim() && onUpdateHrAdminPasscode) {
-                        onUpdateHrAdminPasscode(passcodeInput.trim());
-                        setIsEditingPasscode(false);
-                        setPasscodeSuccessMsg('เปลี่ยนรหัสอนุมัติ HR เรียบร้อยแล้ว!');
-                        setTimeout(() => setPasscodeSuccessMsg(''), 3000);
-                      }
-                    }}
-                    className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition shadow-2xs cursor-pointer"
-                  >
-                    บันทึก
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPasscodeInput(hrAdminPasscode);
-                      setIsEditingPasscode(false);
-                    }}
-                    className="px-2.5 py-1.5 bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 font-bold text-xs rounded-xl transition cursor-pointer"
-                  >
-                    ยกเลิก
-                  </button>
                 </div>
-              ) : (
+
                 <button
                   type="button"
-                  onClick={() => {
-                    setPasscodeInput(hrAdminPasscode);
-                    setIsEditingPasscode(true);
-                  }}
-                  className="px-3.5 py-1.5 bg-white hover:bg-amber-100/60 text-amber-900 border border-amber-300 rounded-xl font-bold text-xs transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                  onClick={() => setIsPasscodeCollapsed(false)}
+                  className="px-2.5 py-1 bg-white hover:bg-amber-100/70 text-amber-900 border border-amber-300 rounded-lg font-bold text-xs transition shadow-2xs flex items-center gap-1 cursor-pointer shrink-0"
                 >
-                  <KeyRound className="w-3.5 h-3.5 text-amber-700" />
-                  <span>ตั้งรหัสอนุมัติ HR ใหม่</span>
+                  <span>โชว์ / ตั้งค่า</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-amber-800" />
                 </button>
-              )}
-            </div>
+              </div>
+            ) : (
+              /* Expanded view */
+              <div className="space-y-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-amber-500/20 text-amber-900 rounded-xl shrink-0">
+                      <ShieldCheck className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                        ตั้งค่ารหัสอนุมัติสิทธิ์ผู้ดูแล HR (Admin Passcode)
+                        <span className="px-2 py-0.5 bg-amber-200/80 text-amber-900 font-mono font-extrabold rounded-md text-[11px]">
+                          {hrAdminPasscode}
+                        </span>
+                      </h4>
+                      <p className="text-[11px] text-amber-800/90 mt-0.5">
+                        ใช้สำหรับยืนยันสิทธิ์เมื่อผู้สมัครลงทะเบียนเข้าใช้งานในสิทธิ์ผู้ดูแลระบบ (HR Admin)
+                      </p>
+                    </div>
+                  </div>
 
-            {passcodeSuccessMsg && (
-              <div className="w-full text-xs font-bold text-emerald-800 bg-emerald-100/90 border border-emerald-300 px-3 py-1.5 rounded-xl animate-in fade-in">
-                ✓ {passcodeSuccessMsg}
+                  <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                    {isEditingPasscode ? (
+                      <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                        <input
+                          type="text"
+                          value={passcodeInput}
+                          onChange={(e) => setPasscodeInput(e.target.value.trim())}
+                          placeholder="กรอกรหัสใหม่"
+                          className="px-3 py-1.5 bg-white border border-amber-300 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-amber-500 w-32"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newCode = passcodeInput.trim();
+                            if (newCode) {
+                              if (onUpdateHrAdminPasscode) {
+                                onUpdateHrAdminPasscode(newCode);
+                              }
+                              setIsEditingPasscode(false);
+                              setPasscodeSuccessMsg(`เปลี่ยนรหัสอนุมัติ HR เป็น ${newCode} เรียบร้อยแล้ว!`);
+                              setTimeout(() => setPasscodeSuccessMsg(''), 3500);
+                            }
+                          }}
+                          className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition shadow-2xs cursor-pointer shrink-0"
+                        >
+                          บันทึก
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPasscodeInput(hrAdminPasscode);
+                            setIsEditingPasscode(false);
+                          }}
+                          className="px-2.5 py-1.5 bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 font-bold text-xs rounded-xl transition cursor-pointer"
+                        >
+                          ยกเลิก
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPasscodeInput(hrAdminPasscode);
+                          setIsEditingPasscode(true);
+                        }}
+                        className="px-3.5 py-1.5 bg-white hover:bg-amber-100/60 text-amber-900 border border-amber-300 rounded-xl font-bold text-xs transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <KeyRound className="w-3.5 h-3.5 text-amber-700" />
+                        <span>ตั้งรหัสอนุมัติ HR ใหม่</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => setIsPasscodeCollapsed(true)}
+                      className="px-2.5 py-1.5 bg-white hover:bg-amber-100/70 text-amber-900 border border-amber-300 rounded-xl font-bold text-xs transition shadow-2xs flex items-center gap-1 cursor-pointer shrink-0"
+                      title="ย่อการแสดงผล"
+                    >
+                      <span>ย่อ</span>
+                      <ChevronUp className="w-3.5 h-3.5 text-amber-800" />
+                    </button>
+                  </div>
+                </div>
+
+                {passcodeSuccessMsg && (
+                  <div className="w-full text-xs font-bold text-emerald-800 bg-emerald-100/90 border border-emerald-300 px-3 py-1.5 rounded-xl animate-in fade-in">
+                    ✓ {passcodeSuccessMsg}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -520,6 +605,25 @@ export const EmployeeView: React.FC<EmployeeViewProps> = ({
               </button>
 
               <div className="flex items-center gap-1 border-l border-slate-200 pl-2">
+                <button
+                  type="button"
+                  onClick={() => setIsUserTableCollapsed(!isUserTableCollapsed)}
+                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0 mr-1"
+                  title={isUserTableCollapsed ? 'โชว์การแสดงผลตาราง' : 'ย่อการแสดงผลตาราง'}
+                >
+                  {isUserTableCollapsed ? (
+                    <>
+                      <ChevronDown className="w-4 h-4 text-emerald-600" />
+                      <span>โชว์ตาราง</span>
+                    </>
+                  ) : (
+                    <>
+                      <ChevronUp className="w-4 h-4 text-slate-600" />
+                      <span>ย่อตาราง</span>
+                    </>
+                  )}
+                </button>
+
                 <Filter className="w-4 h-4 text-slate-400" />
                 <select
                   value={roleFilter}
@@ -535,7 +639,23 @@ export const EmployeeView: React.FC<EmployeeViewProps> = ({
           </div>
 
           {/* User Accounts Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+          {isUserTableCollapsed ? (
+            <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between gap-3 text-xs font-semibold text-slate-700">
+              <span className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-slate-400"></span>
+                ย่อการแสดงผลตารางสิทธิ์ & บัญชีผู้ใช้งานระบบไว้ ({filteredUsers.length} บัญชี)
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsUserTableCollapsed(false)}
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0"
+              >
+                <span>โชว์ตารางการแสดงผล</span>
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
@@ -556,11 +676,12 @@ export const EmployeeView: React.FC<EmployeeViewProps> = ({
                       </td>
                     </tr>
                   ) : (
-                    filteredUsers.map((user) => {
+                    filteredUsers.map((user, index) => {
                       const isHr = user.role === 'hr';
+                      const userKey = user.id ? `${user.id}-${index}` : `${user.username}-${index}`;
                       const isVisible = showAllPasswords || visiblePasswords[user.id || user.username];
                       return (
-                        <tr key={user.id || user.username} className="hover:bg-slate-50/80 transition">
+                        <tr key={userKey} className="hover:bg-slate-50/80 transition">
                           <td className="p-3.5 pl-4 font-mono font-bold text-slate-900">
                             <div className="flex items-center gap-2">
                               <span className="px-2.5 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-lg text-xs font-extrabold flex items-center gap-1">
@@ -683,6 +804,7 @@ export const EmployeeView: React.FC<EmployeeViewProps> = ({
               </table>
             </div>
           </div>
+          )}
 
         </div>
       )}

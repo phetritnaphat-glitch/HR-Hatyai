@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Employee, Shift } from '../types';
-import { CalendarDays, Clock, Plus, Users, Sparkles, CheckCircle } from 'lucide-react';
+import { CalendarDays, Clock, Plus, Users, Sparkles, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface ShiftViewProps {
   currentEmployee: Employee;
@@ -36,6 +36,8 @@ export const ShiftView: React.FC<ShiftViewProps> = ({
     { type: 'evening', name: 'กะบ่าย', time: '13:00 - 22:00', color: 'bg-amber-100 text-amber-800 border-amber-200' },
     { type: 'off', name: 'วันหยุด', time: 'OFF', color: 'bg-slate-100 text-slate-500 border-slate-200' }
   ];
+
+  const [isTableCollapsed, setIsTableCollapsed] = useState(true);
 
   const [selectedShiftEdit, setSelectedShiftEdit] = useState<{
     employeeId: string;
@@ -79,7 +81,26 @@ export const ShiftView: React.FC<ShiftViewProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setIsTableCollapsed(!isTableCollapsed)}
+            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition shadow-2xs flex items-center gap-1.5 cursor-pointer shrink-0"
+            title={isTableCollapsed ? 'โชว์ตารางกะการทำงาน' : 'ย่อตารางกะการทำงาน'}
+          >
+            {isTableCollapsed ? (
+              <>
+                <ChevronDown className="w-4 h-4 text-emerald-400" />
+                <span>โชว์ตาราง</span>
+              </>
+            ) : (
+              <>
+                <ChevronUp className="w-4 h-4 text-slate-300" />
+                <span>ย่อตาราง</span>
+              </>
+            )}
+          </button>
+
           {shiftPresets.map((p) => (
             <span
               key={p.type}
@@ -92,71 +113,88 @@ export const ShiftView: React.FC<ShiftViewProps> = ({
       </div>
 
       {/* Roster Calendar Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-slate-900 text-white font-bold border-b border-slate-800">
-                <th className="p-3.5 min-w-[180px]">พนักงาน / แผนก</th>
-                {daysOfWeek.map((day) => (
-                  <th key={day.date} className="p-3.5 text-center min-w-[120px]">
-                    <div>{day.label}</div>
-                    <div className="text-[10px] text-slate-400 font-normal">กะทำงาน</div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {visibleEmployees.map((emp) => (
-                <tr key={emp.id} className="hover:bg-slate-50/80 transition">
-                  {/* Employee name & info */}
-                  <td className="p-3.5 bg-slate-50/50">
-                    <div className="flex items-center gap-2">
-                      <img src={emp.avatar} alt={emp.name} className="w-8 h-8 rounded-lg object-cover" />
-                      <div>
-                        <div className="font-bold text-slate-900">{emp.name}</div>
-                        <div className="text-[11px] text-slate-500">{emp.department}</div>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Days */}
-                  {daysOfWeek.map((day) => {
-                    const shift = getShiftForEmpDate(emp.id, day.date);
-                    const shiftType = shift?.shiftType || 'normal';
-                    const preset = shiftPresets.find((p) => p.type === shiftType) || shiftPresets[0];
-
-                    return (
-                      <td
-                        key={day.date}
-                        onClick={() =>
-                          isAdminView &&
-                          setSelectedShiftEdit({
-                            employeeId: emp.id,
-                            employeeName: emp.name,
-                            date: day.date,
-                            currentType: shiftType
-                          })
-                        }
-                        className={`p-2.5 text-center cursor-pointer transition relative group hover:ring-2 hover:ring-emerald-500 rounded-lg ${
-                          isAdminView ? 'hover:bg-emerald-50' : ''
-                        }`}
-                      >
-                        <div
-                          className={`p-2 rounded-xl border text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 ${preset.color}`}
-                        >
-                          <span>{shift?.shiftName || preset.name}</span>
-                          <span className="text-[10px] font-mono opacity-80">{preset.time}</span>
-                        </div>
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {isTableCollapsed ? (
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex items-center justify-between gap-3 text-xs font-semibold text-slate-700">
+          <span className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-slate-400"></span>
+            ย่อการแสดงผลตารางกะการทำงานไว้ ({visibleEmployees.length} รายชื่อ)
+          </span>
+          <button
+            type="button"
+            onClick={() => setIsTableCollapsed(false)}
+            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0"
+          >
+            <span>โชว์ตารางกะการทำงาน</span>
+            <ChevronDown className="w-3.5 h-3.5" />
+          </button>
         </div>
-      </div>
+      ) : (
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-900 text-white font-bold border-b border-slate-800">
+                  <th className="p-3.5 min-w-[180px]">พนักงาน / แผนก</th>
+                  {daysOfWeek.map((day) => (
+                    <th key={day.date} className="p-3.5 text-center min-w-[120px]">
+                      <div>{day.label}</div>
+                      <div className="text-[10px] text-slate-400 font-normal">กะทำงาน</div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {visibleEmployees.map((emp) => (
+                  <tr key={emp.id} className="hover:bg-slate-50/80 transition">
+                    {/* Employee name & info */}
+                    <td className="p-3.5 bg-slate-50/50">
+                      <div className="flex items-center gap-2">
+                        <img src={emp.avatar} alt={emp.name} className="w-8 h-8 rounded-lg object-cover" />
+                        <div>
+                          <div className="font-bold text-slate-900">{emp.name}</div>
+                          <div className="text-[11px] text-slate-500">{emp.department}</div>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Days */}
+                    {daysOfWeek.map((day) => {
+                      const shift = getShiftForEmpDate(emp.id, day.date);
+                      const shiftType = shift?.shiftType || 'normal';
+                      const preset = shiftPresets.find((p) => p.type === shiftType) || shiftPresets[0];
+
+                      return (
+                        <td
+                          key={day.date}
+                          onClick={() =>
+                            isAdminView &&
+                            setSelectedShiftEdit({
+                              employeeId: emp.id,
+                              employeeName: emp.name,
+                              date: day.date,
+                              currentType: shiftType
+                            })
+                          }
+                          className={`p-2.5 text-center cursor-pointer transition relative group hover:ring-2 hover:ring-emerald-500 rounded-lg ${
+                            isAdminView ? 'hover:bg-emerald-50' : ''
+                          }`}
+                        >
+                          <div
+                            className={`p-2 rounded-xl border text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 ${preset.color}`}
+                          >
+                            <span>{shift?.shiftName || preset.name}</span>
+                            <span className="text-[10px] font-mono opacity-80">{preset.time}</span>
+                          </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Edit Shift Modal */}
       {selectedShiftEdit && (

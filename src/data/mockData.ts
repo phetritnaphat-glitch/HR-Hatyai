@@ -313,7 +313,7 @@ export const INITIAL_LEAVES: LeaveRequest[] = [
     startDate: '2026-08-05',
     endDate: '2026-08-05',
     daysCount: 1,
-    reason: 'ติดติดต่อหน่วยงานราชการทำใบขับขี่',
+    reason: 'ติดต่อหน่วยงานราชการทำใบขับขี่',
     status: 'pending',
     requestedAt: '2026-07-27 09:10'
   }

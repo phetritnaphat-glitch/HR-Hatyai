@@ -35,18 +35,37 @@ import { EmployeeView } from './components/EmployeeView';
 import { ReportsView } from './components/ReportsView';
 import { LoginView } from './components/LoginView';
 
+// Utility to ensure unique user accounts by ID and username
+const sanitizeUserAccounts = (users: UserAccount[]): UserAccount[] => {
+  const seenIds = new Set<string>();
+  const seenUsernames = new Set<string>();
+  return users.filter((u) => {
+    const idKey = u.id || u.username;
+    const usernameKey = u.username.toLowerCase();
+    if (seenIds.has(idKey) || seenUsernames.has(usernameKey)) {
+      return false;
+    }
+    seenIds.add(idKey);
+    seenUsernames.add(usernameKey);
+    return true;
+  });
+};
+
 export default function App() {
   // User Accounts State with localStorage
   const [userAccounts, setUserAccounts] = useState<UserAccount[]>(() => {
     const saved = localStorage.getItem('hr_cloud_registered_users');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return sanitizeUserAccounts(parsed);
+        }
       } catch (e) {
-        return MOCK_USERS;
+        return sanitizeUserAccounts(MOCK_USERS);
       }
     }
-    return MOCK_USERS;
+    return sanitizeUserAccounts(MOCK_USERS);
   });
 
   // Application Employees State with localStorage
@@ -61,6 +80,16 @@ export default function App() {
     }
     return INITIAL_EMPLOYEES;
   });
+
+  // HR Admin Passcode State with localStorage
+  const [hrAdminPasscode, setHrAdminPasscode] = useState<string>(() => {
+    return localStorage.getItem('hr_cloud_admin_passcode') || '1234';
+  });
+
+  const handleUpdateHrAdminPasscode = (newPasscode: string) => {
+    setHrAdminPasscode(newPasscode);
+    localStorage.setItem('hr_cloud_admin_passcode', newPasscode);
+  };
 
   const TEN_MINUTES_SEC = 600; // 10 minutes (600 seconds) inactivity limit
 
@@ -177,7 +206,7 @@ export default function App() {
 
   // Register User Handler
   const handleRegisterUser = (newUser: UserAccount, newEmp: Employee) => {
-    const updatedUsers = [...userAccounts, newUser];
+    const updatedUsers = sanitizeUserAccounts([...userAccounts, newUser]);
     const updatedEmps = [...employees, newEmp];
     
     setUserAccounts(updatedUsers);
@@ -218,6 +247,7 @@ export default function App() {
         onLoginSuccess={handleLoginSuccess}
         userAccounts={userAccounts}
         onRegisterUser={handleRegisterUser}
+        hrAdminPasscode={hrAdminPasscode}
       />
     );
   }
@@ -371,7 +401,10 @@ export default function App() {
     const storedUsers = localStorage.getItem('hr_cloud_registered_users');
     if (storedUsers) {
       try {
-        setUserAccounts(JSON.parse(storedUsers));
+        const parsed = JSON.parse(storedUsers);
+        if (Array.isArray(parsed)) {
+          setUserAccounts(sanitizeUserAccounts(parsed));
+        }
       } catch (e) {
         console.error('Error syncing user accounts', e);
       }
@@ -433,7 +466,7 @@ export default function App() {
         />
 
         {/* Content Panel */}
-        <main className="flex-1 p-2.5 sm:p-3 md:p-3.5 min-w-0 pb-12 md:pb-3">
+        <main className="flex-1 p-2.5 sm:p-3 md:p-3.5 min-w-0 pb-20 md:pb-4">
           {activeTab === 'dashboard' && (
             <DashboardView
               currentEmployee={currentEmployee}
@@ -504,6 +537,8 @@ export default function App() {
                 onEditUserAccount={handleEditUserAccount}
                 onDeleteUserAccount={handleDeleteUserAccount}
                 isAdminView={isAdminView}
+                hrAdminPasscode={hrAdminPasscode}
+                onUpdateHrAdminPasscode={handleUpdateHrAdminPasscode}
               />
             ) : (
               <div className="bg-white rounded-2xl p-8 text-center space-y-4 shadow-sm border border-slate-200 my-8">
@@ -555,7 +590,7 @@ export default function App() {
       </div>
 
       {/* Mobile Bottom Navigation Bar for Instant Mobile Access */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-slate-900 border-t border-slate-800 text-slate-400 py-1.5 px-2 flex justify-around items-center shadow-2xl backdrop-blur-md">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-slate-900/95 border-t border-slate-800 text-slate-400 py-1 px-1 flex justify-around items-center shadow-2xl backdrop-blur-md">
         {bottomNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -566,19 +601,19 @@ export default function App() {
                 setActiveTab(item.id);
                 setMobileMenuOpen(false);
               }}
-              className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all relative min-w-[60px] ${
+              className={`flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all relative flex-1 max-w-[64px] ${
                 isActive ? 'text-emerald-400 font-bold scale-105' : 'hover:text-slate-200'
               }`}
             >
               <div className="relative">
-                <Icon className={`w-5 h-5 ${isActive ? 'text-emerald-400' : 'text-slate-400'}`} />
+                <Icon className={`w-4.5 h-4.5 ${isActive ? 'text-emerald-400' : 'text-slate-400'}`} />
                 {item.badge && (
-                  <span className="absolute -top-1.5 -right-2 bg-rose-500 text-white text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center">
+                  <span className="absolute -top-1.5 -right-2 bg-rose-500 text-white text-[9px] font-extrabold w-3.5 h-3.5 rounded-full flex items-center justify-center">
                     {item.badge}
                   </span>
                 )}
               </div>
-              <span className="text-[10px] mt-0.5 tracking-tight">{item.label}</span>
+              <span className="text-[9.5px] mt-0.5 tracking-tighter truncate max-w-full">{item.label}</span>
             </button>
           );
         })}
@@ -586,14 +621,14 @@ export default function App() {
         {/* Button to Open Left Sidebar Mobile Drawer */}
         <button
           onClick={() => setMobileMenuOpen(true)}
-          className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all relative min-w-[60px] ${
+          className={`flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all relative flex-1 max-w-[64px] ${
             mobileMenuOpen ? 'text-emerald-400 font-bold scale-105' : 'text-slate-300 hover:text-white'
           }`}
         >
-          <div className="relative p-1 bg-emerald-600/20 text-emerald-400 rounded-lg border border-emerald-500/30">
+          <div className="relative p-0.5 bg-emerald-600/20 text-emerald-400 rounded-lg border border-emerald-500/30">
             <Menu className="w-4 h-4" />
           </div>
-          <span className="text-[10px] mt-0.5 tracking-tight font-semibold text-emerald-400">เมนูทั้งหมด</span>
+          <span className="text-[9.5px] mt-0.5 tracking-tighter font-semibold text-emerald-400 truncate max-w-full">เมนูทั้งหมด</span>
         </button>
       </nav>
 

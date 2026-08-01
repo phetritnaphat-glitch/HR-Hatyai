@@ -15,7 +15,9 @@ import {
   Pencil,
   Trash2,
   Edit3,
-  Search
+  Search,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 interface LeaveViewProps {
@@ -43,6 +45,7 @@ export const LeaveView: React.FC<LeaveViewProps> = ({
   isAdminView
 }) => {
   const [showRequestModal, setShowRequestModal] = useState(false);
+  const [isTableCollapsed, setIsTableCollapsed] = useState(true);
   const [leaveType, setLeaveType] = useState<LeaveType>('annual');
   const [startDate, setStartDate] = useState('2026-07-30');
   const [endDate, setEndDate] = useState('2026-07-30');
@@ -280,59 +283,64 @@ export const LeaveView: React.FC<LeaveViewProps> = ({
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
             {pendingList.map((req) => (
-              <div key={req.id} className="bg-white rounded-xl p-4 border border-amber-200 shadow-xs space-y-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="font-bold text-slate-900 text-sm">{req.employeeName}</span>
-                    <span className="text-xs text-slate-500 block">{req.department}</span>
-                  </div>
-                  <span className="px-2.5 py-0.5 bg-amber-100 text-amber-800 text-xs font-bold rounded-md">
-                    {req.leaveType === 'annual'
-                      ? 'ลาพักร้อน'
-                      : req.leaveType === 'sick'
-                      ? 'ลาป่วย'
-                      : 'ลากิจ'}
-                  </span>
-                </div>
-
-                <div className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-100 space-y-1">
-                  <div>
-                    <span className="font-semibold text-slate-800">ช่วงวันที่:</span> {req.startDate} ถึง {req.endDate} ({req.daysCount} วัน)
-                  </div>
-                  <div>
-                    <span className="font-semibold text-slate-800">เหตุผล:</span> "{req.reason}"
-                  </div>
-                  {req.attachmentUrl && (
-                    <div className="text-emerald-600 font-semibold flex items-center gap-1 pt-1">
-                      <Paperclip className="w-3.5 h-3.5" /> มีแนบเอกสารใบรับรองแพทย์
+              <div key={req.id} className="bg-white rounded-xl p-4 border border-amber-200 shadow-xs flex flex-col justify-between h-full space-y-3">
+                <div className="space-y-3 flex-1 flex flex-col">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="font-bold text-slate-900 text-sm">{req.employeeName}</span>
+                      <span className="text-xs text-slate-500 block">{req.department}</span>
                     </div>
-                  )}
+                    <span className="px-2.5 py-0.5 bg-amber-100 text-amber-800 text-xs font-bold rounded-md shrink-0">
+                      {req.leaveType === 'annual'
+                        ? 'ลาพักร้อน'
+                        : req.leaveType === 'sick'
+                        ? 'ลาป่วย'
+                        : 'ลากิจ'}
+                    </span>
+                  </div>
+
+                  <div className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-100 space-y-1 flex-1 flex flex-col justify-center min-h-[76px]">
+                    <div>
+                      <span className="font-semibold text-slate-800">ช่วงวันที่:</span> {req.startDate} ถึง {req.endDate} ({req.daysCount} วัน)
+                    </div>
+                    <div>
+                      <span className="font-semibold text-slate-800">เหตุผล:</span> "{req.reason}"
+                    </div>
+                    {req.attachmentUrl && (
+                      <div className="text-emerald-600 font-semibold flex items-center gap-1 pt-1">
+                        <Paperclip className="w-3.5 h-3.5 shrink-0" /> มีแนบเอกสารใบรับรองแพทย์
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {isAdminView && (
-                  <div className="flex items-center gap-2 pt-1">
+                  <div className="flex items-center gap-2 pt-2 border-t border-slate-100/80 mt-auto">
                     <button
+                      type="button"
                       onClick={() =>
                         onUpdateLeaveStatus(req.id, 'approved', `${currentEmployee.name} (HR)`)
                       }
-                      className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg transition inline-flex items-center justify-center gap-1 shadow-xs"
+                      className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg transition inline-flex items-center justify-center gap-1 shadow-xs cursor-pointer"
                     >
                       <CheckCircle2 className="w-4 h-4" /> อนุมัติการลา
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleOpenEdit(req)}
-                      className="py-1.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg transition inline-flex items-center justify-center gap-1"
+                      className="py-1.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg transition inline-flex items-center justify-center gap-1 cursor-pointer shrink-0"
                       title="แก้ไขข้อมูลคำขอนี้"
                     >
                       <Pencil className="w-3.5 h-3.5" /> แก้ไข
                     </button>
                     <button
+                      type="button"
                       onClick={() =>
                         onUpdateLeaveStatus(req.id, 'rejected', `${currentEmployee.name} (HR)`, 'ไม่อนุมัติเนื่องจากซ้อนกะงานสำคัญ')
                       }
-                      className="flex-1 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold text-xs rounded-lg transition inline-flex items-center justify-center gap-1"
+                      className="flex-1 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold text-xs rounded-lg transition inline-flex items-center justify-center gap-1 cursor-pointer"
                     >
                       <XCircle className="w-4 h-4" /> ปฏิเสธคำขอ
                     </button>
@@ -358,6 +366,25 @@ export const LeaveView: React.FC<LeaveViewProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => setIsTableCollapsed(!isTableCollapsed)}
+              className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0"
+              title={isTableCollapsed ? 'โชว์การแสดงผลตาราง' : 'ย่อการแสดงผลตาราง'}
+            >
+              {isTableCollapsed ? (
+                <>
+                  <ChevronDown className="w-4 h-4 text-emerald-600" />
+                  <span>โชว์ตาราง</span>
+                </>
+              ) : (
+                <>
+                  <ChevronUp className="w-4 h-4 text-slate-600" />
+                  <span>ย่อตาราง</span>
+                </>
+              )}
+            </button>
+
             <div className="relative flex-1 sm:w-52">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
               <input
@@ -382,6 +409,22 @@ export const LeaveView: React.FC<LeaveViewProps> = ({
           </div>
         </div>
 
+        {isTableCollapsed ? (
+          <div className="p-4 bg-slate-50 text-slate-700 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between gap-3 text-xs font-semibold">
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-slate-400"></span>
+              ย่อการแสดงผลตารางคำขอลางานไว้ ({filteredLeaveRequests.length} รายการ)
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsTableCollapsed(false)}
+              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0"
+            >
+              <span>โชว์ตารางคำขอลางาน</span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : (
         <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-2xs">
           <table className="w-full text-left text-xs whitespace-nowrap">
             <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
@@ -407,15 +450,17 @@ export const LeaveView: React.FC<LeaveViewProps> = ({
                   </td>
                 </tr>
               ) : (
-                filteredLeaveRequests.map((l) => (
+                filteredLeaveRequests.map((l) => {
+                  const deptDisplay = l.department.includes('(') ? l.department : `(${l.department})`;
+                  return (
                   <tr key={l.id} className="hover:bg-slate-50/80 transition">
-                    <td className="py-2.5 px-3 pl-4 font-bold text-slate-900">
+                    <td className="py-2.5 px-3 pl-4 font-bold text-slate-900 whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-slate-900 truncate max-w-[130px]" title={l.employeeName}>{l.employeeName}</span>
-                        <span className="text-[10px] text-slate-400 font-normal truncate max-w-[90px]">({l.department})</span>
+                        <span className="font-bold text-slate-900">{l.employeeName}</span>
+                        <span className="text-[11px] text-slate-400 font-normal">{deptDisplay}</span>
                       </div>
                     </td>
-                    <td className="py-2.5 px-3 font-medium">
+                    <td className="py-2.5 px-3 font-medium whitespace-nowrap">
                       <span className="px-2 py-0.5 bg-slate-100 text-slate-800 text-[11px] font-bold rounded-md border border-slate-200">
                         {l.leaveType === 'annual'
                           ? 'ลาพักร้อน'
@@ -426,16 +471,16 @@ export const LeaveView: React.FC<LeaveViewProps> = ({
                           : 'ลาไม่รับค่าจ้าง'}
                       </span>
                     </td>
-                    <td className="py-2.5 px-3 font-mono font-semibold text-slate-800 text-[11px]">
+                    <td className="py-2.5 px-3 font-mono font-semibold text-slate-800 text-[11px] whitespace-nowrap">
                       {l.startDate} ถึง {l.endDate}
                     </td>
-                    <td className="py-2.5 px-3 text-center font-black text-slate-900 bg-slate-50/50">
+                    <td className="py-2.5 px-3 text-center font-black text-slate-900 bg-slate-50/50 whitespace-nowrap">
                       {l.daysCount} วัน
                     </td>
-                    <td className="py-2.5 px-3 text-slate-600 max-w-[150px] truncate" title={l.reason}>
+                    <td className="py-2.5 px-3 text-slate-600 whitespace-nowrap" title={l.reason}>
                       {l.reason}
                     </td>
-                    <td className="py-2.5 px-3 text-slate-600 max-w-[150px] truncate" title={l.remark || l.rejectReason || '-'}>
+                    <td className="py-2.5 px-3 text-slate-600 whitespace-nowrap" title={l.remark || l.rejectReason || '-'}>
                       {l.remark || l.rejectReason ? (
                         <span className="text-slate-700 font-medium bg-slate-100 px-2 py-0.5 rounded border border-slate-200 text-[11px]">
                           {l.remark || l.rejectReason}
@@ -444,7 +489,7 @@ export const LeaveView: React.FC<LeaveViewProps> = ({
                         <span className="text-slate-300">-</span>
                       )}
                     </td>
-                    <td className="py-2.5 px-3 text-center">
+                    <td className="py-2.5 px-3 text-center whitespace-nowrap">
                       <span
                         className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-extrabold rounded-full ${
                           l.status === 'approved'
@@ -461,8 +506,8 @@ export const LeaveView: React.FC<LeaveViewProps> = ({
                           : 'ปฏิเสธ'}
                       </span>
                     </td>
-                    <td className="py-2.5 px-3 text-xs text-slate-500">{l.approvedBy || '-'}</td>
-                    <td className="py-2.5 px-3 text-center bg-emerald-50/30 border-l border-emerald-100">
+                    <td className="py-2.5 px-3 text-xs text-slate-500 whitespace-nowrap">{l.approvedBy || '-'}</td>
+                    <td className="py-2.5 px-3 text-center bg-emerald-50/30 border-l border-emerald-100 whitespace-nowrap">
                       <div className="flex items-center justify-center gap-1.5">
                         <button
                           type="button"
@@ -484,11 +529,13 @@ export const LeaveView: React.FC<LeaveViewProps> = ({
                       </div>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
+        )}
       </div>
 
       {/* New Leave Request Modal */}

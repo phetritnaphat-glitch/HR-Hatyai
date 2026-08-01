@@ -16,7 +16,11 @@ import {
   LogIn,
   CheckCircle2,
   Briefcase,
-  Banknote
+  Banknote,
+  ChevronDown,
+  ChevronUp,
+  Minimize2,
+  Maximize2
 } from 'lucide-react';
 
 interface LoginViewProps {
@@ -33,6 +37,12 @@ export const LoginView: React.FC<LoginViewProps> = ({
   hrAdminPasscode = '1234'
 }) => {
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
+  const [isBannerCollapsed, setIsBannerCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 768;
+    }
+    return false;
+  });
 
   // Login Form States
   const [username, setUsername] = useState('');
@@ -185,60 +195,97 @@ export const LoginView: React.FC<LoginViewProps> = ({
       
       <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-12 bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200">
         
-        {/* Left Banner Section (Hidden on Mobile) */}
-        <div className="md:col-span-5 bg-slate-950 p-8 text-white flex flex-col justify-between relative overflow-hidden">
+        {/* Left Banner Section */}
+        <div className={`md:col-span-5 bg-slate-950 ${isBannerCollapsed ? 'p-4 sm:p-5' : 'p-6 sm:p-8'} text-white flex flex-col justify-between relative overflow-hidden transition-all duration-300`}>
           {/* Subtle Background Elements */}
           <div className="absolute -top-20 -left-20 w-60 h-60 bg-emerald-600/20 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute -bottom-20 -right-20 w-60 h-60 bg-teal-500/20 rounded-full blur-3xl pointer-events-none" />
 
           <div>
-            <div className="flex items-center gap-2.5 mb-8">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center text-white font-bold shadow-lg shadow-emerald-500/30">
-                <Building className="w-5 h-5" />
+            <div className="flex items-center justify-between gap-2 mb-4 sm:mb-6">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-500 flex items-center justify-center text-white font-bold shadow-lg shadow-emerald-500/30 shrink-0">
+                  <Building className="w-5 h-5" />
+                </div>
+                <div>
+                  <h1 className="font-extrabold text-base tracking-tight text-white">Thanakrit HR Cloud</h1>
+                  <p className="text-[11px] text-emerald-400 font-medium">Enterprise Attendance & Payroll</p>
+                </div>
               </div>
-              <div>
-                <h1 className="font-extrabold text-base tracking-tight text-white">Thai HR Cloud</h1>
-                <p className="text-[11px] text-emerald-400 font-medium">Enterprise Attendance & Payroll</p>
-              </div>
+
+              {/* Collapse / Expand Toggle Button */}
+              <button
+                type="button"
+                onClick={() => setIsBannerCollapsed(!isBannerCollapsed)}
+                className="px-2.5 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1 border border-slate-700/80 transition cursor-pointer shrink-0"
+                title={isBannerCollapsed ? 'ขยายแสดงรายละเอียดระบบ' : 'ย่อเก็บรายละเอียดระบบ'}
+              >
+                {isBannerCollapsed ? (
+                  <>
+                    <ChevronDown className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-[11px]">ขยาย</span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronUp className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-[11px]">ย่อ</span>
+                  </>
+                )}
+              </button>
             </div>
 
-            <div className="space-y-4">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
-                <Sparkles className="w-3.5 h-3.5" /> ระบบจำกัดสิทธิ์การเข้าถึง (RBAC)
-              </span>
+            {!isBannerCollapsed && (
+              <div className="space-y-4 animate-in fade-in duration-200">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
+                  <Sparkles className="w-3.5 h-3.5" /> ระบบจำกัดสิทธิ์การเข้าถึง (RBAC)
+                </span>
 
-              <h2 className="text-2xl font-bold tracking-tight text-white leading-snug">
-                ระบบจัดการบุคลากร และลงเวลาเข้างาน
-              </h2>
+                <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white leading-snug">
+                  ระบบจัดการบุคลากร และลงเวลาเข้างาน
+                </h2>
 
-              <p className="text-slate-400 text-xs leading-relaxed">
-                สร้างบัญชีผู้ใช้ใหม่ หรือ เข้าสู่ระบบตามสิทธิ์เพื่อใช้งาน คุณสมบัติลงเวลาผ่าน GPS, คำนวณเงินเดือน และจัดการวันลา
-              </p>
-            </div>
+                <p className="text-slate-400 text-xs leading-relaxed">
+                  สร้างบัญชีผู้ใช้ใหม่ หรือ เข้าสู่ระบบตามสิทธิ์เพื่อใช้งาน คุณสมบัติลงเวลาผ่าน GPS, คำนวณเงินเดือน และจัดการวันลา
+                </p>
+              </div>
+            )}
           </div>
 
-          <div className="mt-8 pt-6 border-t border-slate-800/80 space-y-3 text-xs">
-            <div className="flex items-center gap-2.5 text-slate-300">
-              <div className="p-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg shrink-0">
-                <ShieldCheck className="w-4 h-4" />
+          {!isBannerCollapsed && (
+            <div className="mt-6 pt-5 border-t border-slate-800/80 space-y-3 text-xs animate-in fade-in duration-200">
+              <div className="flex items-center gap-2.5 text-slate-300">
+                <div className="p-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg shrink-0">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <span><strong>สิทธิ์ HR / Administrator:</strong> จัดการข้อมูลพนักงาน อนุมัติลางาน ออกรายงาน และคำนวณเงินเดือน</span>
               </div>
-              <span><strong>สิทธิ์ HR / Administrator:</strong> จัดการข้อมูลพนักงาน อนุมัติลางาน ออกรายงาน และคำนวณเงินเดือน</span>
-            </div>
 
-            <div className="flex items-center gap-2.5 text-slate-300">
-              <div className="p-1.5 bg-sky-500/20 text-sky-400 rounded-lg shrink-0">
-                <UserCheck className="w-4 h-4" />
+              <div className="flex items-center gap-2.5 text-slate-300">
+                <div className="p-1.5 bg-sky-500/20 text-sky-400 rounded-lg shrink-0">
+                  <UserCheck className="w-4 h-4" />
+                </div>
+                <span><strong>สิทธิ์ พนักงาน (Employee):</strong> ลงเวลาเข้างาน GPS, ยื่นลา และดูสลิปเงินเดือนของตนเอง</span>
               </div>
-              <span><strong>สิทธิ์ พนักงาน (Employee):</strong> ลงเวลาเข้างาน GPS, ยื่นลา และดูสลิปเงินเดือนของตนเอง</span>
+
+              {/* Version & Creator Info */}
+              <div className="pt-3 border-t border-slate-800/80 text-[11px] space-y-1">
+                <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                  <span>ระบบพร้อมใช้งาน (Online)</span>
+                </div>
+                <p className="text-slate-400 text-[10px]">รองรับ GPS เช็คอิน, สแกนหน้า, ภาษี & ประกันสังคมไทย</p>
+                <p className="text-[10px] text-emerald-400 font-bold pt-0.5">v69.8.1 -Thanakrit HR Cloud</p>
+                <p className="text-[10px] text-slate-400">ออกแบบและจัดทำโดย คุณธนกฤต เพชรฤทธิ์</p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Right Form Section */}
         <div className="md:col-span-7 p-6 sm:p-10 flex flex-col justify-center bg-white">
           
           {/* Tab Switcher: Login vs Register */}
-          <div className="flex bg-slate-100 p-1 rounded-2xl mb-6">
+          <div className="flex bg-slate-100/90 p-1 rounded-2xl mb-6 border border-slate-200/80">
             <button
               type="button"
               onClick={() => {
@@ -246,14 +293,15 @@ export const LoginView: React.FC<LoginViewProps> = ({
                 setErrorMsg('');
                 setSuccessMsg('');
               }}
-              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 cursor-pointer ${
+              className={`flex-1 py-2.5 px-3 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer whitespace-nowrap ${
                 activeTab === 'login'
-                  ? 'bg-white text-slate-900 shadow-sm'
+                  ? 'bg-white text-slate-900 shadow-sm font-extrabold'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              <LogIn className="w-4 h-4 text-emerald-600" />
-              <span>เข้าสู่ระบบ (Sign In)</span>
+              <LogIn className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>เข้าสู่ระบบ</span>
+              <span className="text-[11px] text-slate-400 font-normal hidden sm:inline">(Sign In)</span>
             </button>
 
             <button
@@ -263,14 +311,15 @@ export const LoginView: React.FC<LoginViewProps> = ({
                 setErrorMsg('');
                 setSuccessMsg('');
               }}
-              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 cursor-pointer ${
+              className={`flex-1 py-2.5 px-3 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer whitespace-nowrap ${
                 activeTab === 'register'
-                  ? 'bg-white text-slate-900 shadow-sm'
+                  ? 'bg-white text-slate-900 shadow-sm font-extrabold'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              <UserPlus className="w-4 h-4 text-emerald-600" />
-              <span>สมัครสมาชิกใหม่ (Register)</span>
+              <UserPlus className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>สมัครสมาชิก</span>
+              <span className="text-[11px] text-slate-400 font-normal hidden sm:inline">(Register)</span>
             </button>
           </div>
 

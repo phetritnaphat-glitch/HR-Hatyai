@@ -12,7 +12,9 @@ import {
   Filter,
   TrendingUp,
   ShieldCheck,
-  Building
+  Building,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 interface PayrollViewProps {
@@ -38,6 +40,7 @@ export const PayrollView: React.FC<PayrollViewProps> = ({
 
   const [searchTerm, setSearchTerm] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('ALL');
+  const [isTableCollapsed, setIsTableCollapsed] = useState(true);
 
   // Edit OT Modal state
   const [editingRecord, setEditingRecord] = useState<PayrollRecord | null>(null);
@@ -205,6 +208,25 @@ export const PayrollView: React.FC<PayrollViewProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => setIsTableCollapsed(!isTableCollapsed)}
+              className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0"
+              title={isTableCollapsed ? 'โชว์การแสดงผลตาราง' : 'ย่อการแสดงผลตาราง'}
+            >
+              {isTableCollapsed ? (
+                <>
+                  <ChevronDown className="w-4 h-4 text-emerald-600" />
+                  <span>โชว์ตาราง</span>
+                </>
+              ) : (
+                <>
+                  <ChevronUp className="w-4 h-4 text-slate-600" />
+                  <span>ย่อตาราง</span>
+                </>
+              )}
+            </button>
+
             <div className="relative flex-1 sm:w-64">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
               <input
@@ -229,6 +251,22 @@ export const PayrollView: React.FC<PayrollViewProps> = ({
         </div>
 
         {/* Table */}
+        {isTableCollapsed ? (
+          <div className="p-4 bg-slate-50 text-slate-700 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between gap-3 text-xs font-semibold">
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-slate-400"></span>
+              ย่อการแสดงผลตารางเงินเดือนพนักงานประจำงวดไว้ ({filteredRecords.length} รายการ)
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsTableCollapsed(false)}
+              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0"
+            >
+              <span>โชว์ตารางเงินเดือน</span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs sm:text-sm text-slate-700">
             <thead className="bg-slate-50 text-slate-500 uppercase text-[11px] font-bold border-b border-slate-200">
@@ -299,6 +337,7 @@ export const PayrollView: React.FC<PayrollViewProps> = ({
             </tbody>
           </table>
         </div>
+        )}
 
       </div>
 

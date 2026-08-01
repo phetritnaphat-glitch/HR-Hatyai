@@ -145,7 +145,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <Building className="w-4 h-4" />
               </div>
               <div>
-                <div className="font-extrabold text-white text-sm">เมนูระบบ HR Online</div>
+                <div className="font-extrabold text-white text-sm">เมนู Thanakrit HR Cloud</div>
                 <div className="text-[10px] text-slate-400">เลือกเมนูการใช้งาน</div>
               </div>
             </div>
@@ -273,12 +273,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className={`mt-8 pt-4 border-t border-slate-800 text-[11px] text-slate-500 space-y-1 ${
           isCollapsed ? 'md:hidden' : 'block'
         }`}>
-          <div className="flex items-center gap-1.5 text-slate-400 font-medium">
+          <div className="flex items-center gap-1.5 text-slate-300 font-medium">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
             <span>ระบบพร้อมใช้งาน (Online)</span>
           </div>
-          <p>รองรับ GPS เช็คอิน, สแกนหน้า, ภาษี & ประกันสังคมไทย</p>
-          <p className="text-[10px] text-slate-600">v2.4.0 Thai HR Cloud Standard</p>
+          <p className="text-slate-400">รองรับ GPS เช็คอิน, สแกนหน้า, ภาษี & ประกันสังคมไทย</p>
+          <p className="text-[10px] text-emerald-400 font-semibold pt-1">v69.8.1 -Thanakrit HR Cloud</p>
+          <p className="text-[10px] text-slate-400">ออกแบบและจัดทำโดย คุณธนกฤต เพชรฤทธิ์</p>
         </div>
 
         {/* Collapsed Footer Icon & Quick Expand Button */}
