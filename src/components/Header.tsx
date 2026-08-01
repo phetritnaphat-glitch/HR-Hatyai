@@ -389,52 +389,6 @@ export const Header: React.FC<HeaderProps> = ({
                     </div>
                   </div>
 
-                  {/* Switch Employee Section */}
-                  {allEmployees && allEmployees.length > 0 && (
-                    <div className="px-2 py-2 border-b border-slate-100">
-                      <div className="px-2 pb-1.5 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                        <span>{currentUserAccount?.role === 'hr' ? 'สลับสิทธิ์ดูข้อมูลพนักงาน (HR)' : 'ข้อมูลบัญชีผู้ใช้'}</span>
-                        <span className="text-slate-400 font-mono">
-                          ({currentUserAccount?.role === 'hr' ? allEmployees.length : 1} คน)
-                        </span>
-                      </div>
-                      <div className="max-h-48 overflow-y-auto space-y-0.5 pr-1">
-                        {(currentUserAccount?.role === 'hr' ? allEmployees : allEmployees.filter(e => e.id === currentEmployee.id)).map((emp) => {
-                          const isSelected = emp.id === currentEmployee.id;
-                          return (
-                            <button
-                              key={emp.id}
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onSelectEmployee(emp);
-                                setDropdownOpen(false);
-                              }}
-                              className={`w-full text-left px-2.5 py-1.5 rounded-xl transition flex items-center justify-between gap-2 cursor-pointer ${
-                                isSelected
-                                  ? 'bg-emerald-50 text-emerald-900 font-bold border border-emerald-200/80'
-                                  : 'hover:bg-slate-50 text-slate-700'
-                              }`}
-                            >
-                              <div className="flex items-center gap-2 min-w-0">
-                                <img
-                                  src={emp.avatar}
-                                  alt={emp.name}
-                                  className="w-6 h-6 rounded-lg object-cover shrink-0"
-                                />
-                                <div className="min-w-0">
-                                  <div className="text-xs truncate">{emp.name}</div>
-                                  <div className="text-[10px] text-slate-400 truncate">{emp.position}</div>
-                                </div>
-                              </div>
-                              {isSelected && <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
                   {/* Logout Action */}
                   <div className="px-2 pt-1">
                     <button
